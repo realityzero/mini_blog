@@ -1,0 +1,35 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "unused-imports", "import", "simple-import-sort", "modules-newline", "prettier", "autofix"],
+  "extends": ["plugin:@typescript-eslint/recommended", "prettier"],
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module"
+  },
+  "rules": {
+    "prettier/prettier": ["error"],
+    "no-console": ["error", { "allow": ["time", "timeLog"] }],
+    "@typescript-eslint/explicit-function-return-type": ["error"],
+    "@typescript-eslint/no-explicit-any": 1,
+    "@typescript-eslint/no-inferrable-types": ["error", { "ignoreProperties": true }],
+    "@typescript-eslint/no-unused-vars": "error",
+    "unused-imports/no-unused-imports": "error",
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error",
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    "import/no-duplicates": "error",
+    "comma-spacing": ["error", { "before": false, "after": true }],
+    "no-process-env": "error",
+    "@typescript-eslint/naming-convention": [
+      "error", {
+        "selector": "memberLike",
+        "modifiers": ["private"],
+        "format": ["camelCase"],
+        "leadingUnderscore": "require"
+      }
+    ],
+    "autofix/no-unused-vars": "error"
+  }
+}
