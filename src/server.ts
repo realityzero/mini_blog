@@ -4,8 +4,10 @@ import express from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { createConnection, getConnection } from 'typeorm';
 
-import { Card } from './entities/Card';
-import { User } from './entities/User';
+import { Card, User } from './entities';
+
+// import { Card } from './entities/Card';
+// import { User } from './entities/User';
 
 const app = express();
 const port = 3000;
@@ -50,30 +52,6 @@ app.post('/register', async (req, res) => {
 
     const token = jwt.sign({ username }, secretKey);
     return res.json({ message: 'User registered successfully', token });
-});
-
-app.post('/login', async (req, res) => {
-    const { username } = req.body;
-
-    if (!username) {
-        return res.status(400).send('Username is required');
-    }
-
-    const user = await getConnection().getRepository(User).findOne({ username });
-
-    if (!user) {
-        return res.status(401).send('User not found');
-    }
-
-    const password = generatePassword(username);
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-
-    if (!isPasswordValid) {
-        return res.status(401).send('Invalid password');
-    }
-
-    const token = jwt.sign({ username }, secretKey);
-    return res.json({ message: 'Login successful', token });
 });
 
 app.post('/cards', async (req, res) => {
