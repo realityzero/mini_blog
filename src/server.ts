@@ -6,9 +6,6 @@ import { createConnection, getConnection } from 'typeorm';
 
 import { Card, User } from './entities';
 
-// import { Card } from './entities/Card';
-// import { User } from './entities/User';
-
 const app = express();
 const port = 3000;
 const secretKey = 'yourSecretKey';
@@ -54,6 +51,7 @@ app.post('/register', async (req, res) => {
     return res.json({ message: 'User registered successfully', token });
 });
 
+// Protected api: store cards
 app.post('/cards', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
 
@@ -69,7 +67,10 @@ app.post('/cards', async (req, res) => {
     }
 
     try {
+        // Request verification. Only proceed further if allowed
+        // Scope of improvement: Create a middleware
         const context = jwt.verify(token, secretKey) as AuthPayload;
+
         const user = await getConnection().getRepository(User).findOne({ username: context.username });
 
         if (!user) {
@@ -91,6 +92,7 @@ app.post('/cards', async (req, res) => {
     }
 });
 
+// Protected api: update card
 app.put('/cards/:cardId', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
 
@@ -106,6 +108,7 @@ app.put('/cards/:cardId', async (req, res) => {
     }
 
     try {
+        // Request verification. Only proceed further if allowed
         const context = jwt.verify(token, secretKey) as AuthPayload;
 
         const card = await getConnection()
@@ -133,6 +136,7 @@ app.put('/cards/:cardId', async (req, res) => {
     }
 });
 
+// Protected api: delete card
 app.delete('/cards/:cardId', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
 
@@ -143,6 +147,7 @@ app.delete('/cards/:cardId', async (req, res) => {
     const { cardId } = req.params;
 
     try {
+        // Request verification. Only proceed further if allowed
         const context = jwt.verify(token, secretKey) as AuthPayload;
 
         const card = await getConnection()
