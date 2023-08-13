@@ -61,16 +61,16 @@ app.post('/cards', async (req, res) => {
         return res.status(401).send('Authorization token not provided');
     }
 
-    const { name, status, content, category, username } = req.body;
+    const { name, status, content, category } = req.body;
 
     // TODO: will be replaced w/ joi
-    if (!name || !status || !content || !category || !username) {
+    if (!name || !status || !content || !category) {
         return res.status(400).json({ message: 'All fields are required' });
     }
 
     try {
-        jwt.verify(token, secretKey) as AuthPayload;
-        const user = await getConnection().getRepository(User).findOne({ username });
+        const context = jwt.verify(token, secretKey) as AuthPayload;
+        const user = await getConnection().getRepository(User).findOne({ username: context.username });
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -92,14 +92,22 @@ app.post('/cards', async (req, res) => {
 });
 
 app.put('/cards/:cardId', async (req, res) => {
-    const { cardId } = req.params;
-    const { name, status, content, category, username } = req.body;
+    const token = req.headers.authorization?.split(' ')[1];
 
-    if (!name || !status || !content || !category || !username) {
+    if (!token) {
+        return res.status(401).send('Authorization token not provided');
+    }
+
+    const { cardId } = req.params;
+    const { name, status, content, category } = req.body;
+
+    if (!name || !status || !content || !category) {
         return res.status(400).json({ message: 'All fields are required' });
     }
 
     try {
+        const context = jwt.verify(token, secretKey) as AuthPayload;
+
         const card = await getConnection()
             .getRepository(Card)
             .findOne(cardId, { relations: ['user'] });
@@ -108,7 +116,7 @@ app.put('/cards/:cardId', async (req, res) => {
             return res.status(404).json({ message: 'Card not found' });
         }
 
-        if (card.user.username !== username) {
+        if (card.user.username !== context.username) {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
@@ -126,10 +134,17 @@ app.put('/cards/:cardId', async (req, res) => {
 });
 
 app.delete('/cards/:cardId', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).send('Authorization token not provided');
+    }
+
     const { cardId } = req.params;
-    const { username } = req.body;
 
     try {
+        const context = jwt.verify(token, secretKey) as AuthPayload;
+
         const card = await getConnection()
             .getRepository(Card)
             .findOne(cardId, { relations: ['user'] });
@@ -138,7 +153,7 @@ app.delete('/cards/:cardId', async (req, res) => {
             return res.status(404).json({ message: 'Card not found' });
         }
 
-        if (card.user.username !== username) {
+        if (card.user.username !== context.username) {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
