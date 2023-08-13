@@ -9,7 +9,6 @@
   },
   "rules": {
     "prettier/prettier": ["error"],
-    "no-console": ["error", { "allow": ["time", "timeLog"] }],
     "@typescript-eslint/explicit-function-return-type": ["error"],
     "@typescript-eslint/no-explicit-any": 1,
     "@typescript-eslint/no-inferrable-types": ["error", { "ignoreProperties": true }],
