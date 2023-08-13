@@ -19,6 +19,3 @@ dist/**/*
 # Logging files
 *.log
 *.pyc
-
-#orm config files
-ormconfig.json
