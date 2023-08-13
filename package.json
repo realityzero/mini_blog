@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/server.js",
-    "dev": "nodemon --watch src -e ts,tsx --exec \"tsc && ts-node\" src/server.ts"
+    "dev": "nodemon --watch src -e ts,tsx --exec \"tsc && ts-node\" src/server.ts",
+    "build-ts": "tsc",
+    "build": "npm run build-ts"
   },
   "author": "nishant",
   "license": "ISC",
