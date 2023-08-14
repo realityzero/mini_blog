@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import Joi from 'joi';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { createConnection, getConnection } from 'typeorm';
@@ -53,6 +53,24 @@ function validateCardIdParam(schema: Joi.ObjectSchema) {
     };
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function authenticateToken(req: Request, res: Response, next: NextFunction) {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).send('Authorization token not provided');
+    }
+
+    try {
+        const context = jwt.verify(token, secretKey) as AuthPayload;
+        // Forward context info like username to request
+        req.body.username = context.username;
+        next();
+    } catch (error) {
+        return res.status(403).send('Invalid token');
+    }
+}
+
 // Unprotected api to register a new user
 app.post('/register', validateSchema(registrationSchema), async (req, res) => {
     const { username } = req.body;
@@ -76,22 +94,12 @@ app.post('/register', validateSchema(registrationSchema), async (req, res) => {
 });
 
 // Protected api: store cards
-app.post('/cards', validateSchema(cardSchema), async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).send('Authorization token not provided');
-    }
-
-    const { name, status, content, category } = req.body;
+app.post('/cards', authenticateToken, validateSchema(cardSchema), async (req, res) => {
+    const { name, status, content, category, username } = req.body;
 
     try {
-        // Request verification. Only proceed further if allowed
-        // Scope of improvement: Create a middleware
-        const context = jwt.verify(token, secretKey) as AuthPayload;
-
         // Scope of improvement: Shift database things to models
-        const user = await getConnection().getRepository(User).findOne({ username: context.username });
+        const user = await getConnection().getRepository(User).findOne({ username: username });
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -113,20 +121,11 @@ app.post('/cards', validateSchema(cardSchema), async (req, res) => {
 });
 
 // Protected api: update card
-app.put('/cards/:cardId', validateCardIdParam(cardIdSchema), validateSchema(cardSchema), async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).send('Authorization token not provided');
-    }
-
+app.put('/cards/:cardId', authenticateToken, validateCardIdParam(cardIdSchema), validateSchema(cardSchema), async (req, res) => {
     const { cardId } = req.params;
-    const { name, status, content, category } = req.body;
+    const { name, status, content, category, username } = req.body;
 
     try {
-        // Request verification. Only proceed further if allowed
-        const context = jwt.verify(token, secretKey) as AuthPayload;
-
         const card = await getConnection()
             .getRepository(Card)
             .findOne(cardId, { relations: ['user'] });
@@ -135,7 +134,7 @@ app.put('/cards/:cardId', validateCardIdParam(cardIdSchema), validateSchema(card
             return res.status(404).json({ message: 'Card not found' });
         }
 
-        if (card.user.username !== context.username) {
+        if (card.user.username !== username) {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
@@ -153,19 +152,11 @@ app.put('/cards/:cardId', validateCardIdParam(cardIdSchema), validateSchema(card
 });
 
 // Protected api: delete card
-app.delete('/cards/:cardId', async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-
-    if (!token) {
-        return res.status(401).send('Authorization token not provided');
-    }
-
+app.delete('/cards/:cardId', authenticateToken, validateCardIdParam(cardIdSchema), async (req, res) => {
     const { cardId } = req.params;
+    const { username } = req.body;
 
     try {
-        // Request verification. Only proceed further if allowed
-        const context = jwt.verify(token, secretKey) as AuthPayload;
-
         const card = await getConnection()
             .getRepository(Card)
             .findOne(cardId, { relations: ['user'] });
@@ -174,7 +165,7 @@ app.delete('/cards/:cardId', async (req, res) => {
             return res.status(404).json({ message: 'Card not found' });
         }
 
-        if (card.user.username !== context.username) {
+        if (card.user.username !== username) {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 

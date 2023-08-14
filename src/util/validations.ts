@@ -5,10 +5,11 @@ export const cardSchema = Joi.object({
     status: Joi.string().min(3).max(30).required(),
     content: Joi.string().min(3).max(300).required(),
     category: Joi.string().min(3).max(50).required(),
+    username: Joi.string().min(2).max(50).required(),
 });
 
 export const registrationSchema = Joi.object({
-    username: Joi.string().required(),
+    username: Joi.string().min(2).max(50).required(),
 });
 
 export const cardIdSchema = Joi.object({
