@@ -1,10 +1,12 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import express from 'express';
+import Joi from 'joi';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { createConnection, getConnection } from 'typeorm';
 
 import { Card, User } from './entities';
+import { cardIdSchema, cardSchema, registrationSchema } from './util/validations';
 
 const app = express();
 const port = 3000;
@@ -29,8 +31,30 @@ createConnection()
     })
     .catch((error) => console.error('Error connecting to database:', error));
 
+function validateSchema(schema: Joi.ObjectSchema) {
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        const { error } = schema.validate(req.body);
+        if (error) {
+            return res.status(400).json({ message: error.details[0].message });
+        }
+        next();
+    };
+}
+
+function validateCardIdParam(schema: Joi.ObjectSchema) {
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        const { error } = schema.validate({ cardId: req.params.cardId });
+        if (error) {
+            return res.status(400).json({ message: 'Invalid cardId' });
+        }
+        next();
+    };
+}
+
 // Unprotected api to register a new user
-app.post('/register', async (req, res) => {
+app.post('/register', validateSchema(registrationSchema), async (req, res) => {
     const { username } = req.body;
 
     if (!username) {
@@ -52,7 +76,7 @@ app.post('/register', async (req, res) => {
 });
 
 // Protected api: store cards
-app.post('/cards', async (req, res) => {
+app.post('/cards', validateSchema(cardSchema), async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -61,16 +85,12 @@ app.post('/cards', async (req, res) => {
 
     const { name, status, content, category } = req.body;
 
-    // TODO: will be replaced w/ joi
-    if (!name || !status || !content || !category) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
-
     try {
         // Request verification. Only proceed further if allowed
         // Scope of improvement: Create a middleware
         const context = jwt.verify(token, secretKey) as AuthPayload;
 
+        // Scope of improvement: Shift database things to models
         const user = await getConnection().getRepository(User).findOne({ username: context.username });
 
         if (!user) {
@@ -93,7 +113,7 @@ app.post('/cards', async (req, res) => {
 });
 
 // Protected api: update card
-app.put('/cards/:cardId', async (req, res) => {
+app.put('/cards/:cardId', validateCardIdParam(cardIdSchema), validateSchema(cardSchema), async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -102,10 +122,6 @@ app.put('/cards/:cardId', async (req, res) => {
 
     const { cardId } = req.params;
     const { name, status, content, category } = req.body;
-
-    if (!name || !status || !content || !category) {
-        return res.status(400).json({ message: 'All fields are required' });
-    }
 
     try {
         // Request verification. Only proceed further if allowed
