@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  postgres:
+    platform: linux/amd64
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports: 
+      - '5450:5432'
+    volumes:
+      - miniblog-db:/var/lib/postgresql/data
+
+  miniblog:
+    platform: linux/amd64
+    build:
+      context: .
+    depends_on:
+      - postgres
+    ports:
+      - '3000:3000'
+        
+volumes:
+  miniblog-db:
