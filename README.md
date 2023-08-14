@@ -26,3 +26,4 @@ This repo contains simple CRUD apis for a mini_blog w/ authentication
 ```
 - Move ```secretKey``` for JWT to environment variable and set up dynamically using ```dotenv``` and ```process.env```
 - Shift database things to models
+- Add some basic tests
